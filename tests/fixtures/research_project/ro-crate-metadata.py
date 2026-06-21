@@ -40,7 +40,7 @@ with crate("."):
             # Route 3: select(...) creates matching files and fragments because
             # the graph needs entities to carry the fragment annotations.
             with select("data/results/*.vtk#point-data:velocity"):
-                link("about", velocity)
+                link("variableMeasured", velocity)
 
             discover()
 

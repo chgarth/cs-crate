@@ -240,8 +240,10 @@ with software("."):
 
 A CSVW descriptor is recognized by `csv-metadata.json` or a
 `*-metadata.json` filename. The descriptor is parsed with `csvw`; each
-referenced CSV that exists becomes a file entity, and nonvirtual columns become
-`variableMeasured` entities.
+referenced CSV that exists becomes a file entity. Each nonvirtual column creates
+an untyped fragment such as `data/table.csv#column:temperature`, linked to the
+CSV with `isPartOf`. Its variable is attached to that fragment with
+`variableMeasured`.
 
 ```python
 with dataset("data"):
@@ -253,8 +255,9 @@ If a descriptor references a missing CSV, that pair is skipped.
 ### Frictionless Data
 
 `datapackage.json` creates or enriches a dataset for its directory. Existing
-resource files become parts of the dataset, and schema fields become measured
-variables.
+resource files become parts of the dataset. Schema fields use the same fragment
+model as CSVW columns: `resource.csv#column:<field>` is linked to the resource
+with `isPartOf`, and its variable is attached with `variableMeasured`.
 
 ```python
 with dataset("survey"):
@@ -280,14 +283,19 @@ velocity = variable("velocity", unit="m/s")
 
 with dataset("results"):
     with select("results/*.vtk#point-data:velocity"):
-        link("about", velocity)
+        link("variableMeasured", velocity)
 ```
 
-This produces:
+Fragments are untyped contextual entities. They are not files or datasets and
+are not added to root containment. This produces:
 
 ```text
-file --hasPart--> fragment --about--> variable
+fragment --isPartOf--> file
+fragment --variableMeasured--> variable
 ```
+
+Repeating the same fragment selection reuses the existing fragment entity.
+Without `#`, `select(...)` targets the matching `File` entities directly.
 
 ## Workflows
 
@@ -368,7 +376,7 @@ with crate("."):
             link("variableMeasured", velocity)
 
             with select("data/results/*.vtk#point-data:velocity"):
-                link("about", velocity)
+                link("variableMeasured", velocity)
 
             discover()
 

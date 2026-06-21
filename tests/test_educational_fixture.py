@@ -66,19 +66,33 @@ def test_educational_repository_exercises_generator_features(tmp_path):
     assert "data/measurements.csv" in graph
     assert "data/survey/responses.csv" in graph
 
-    # CSVW columns and Frictionless fields create measured variables.
-    csv_variables = referenced_ids(graph["data/measurements.csv"]["variableMeasured"])
-    assert {"#time", "#temperature-2", "#velocity-2"} <= set(csv_variables)
-    survey_variables = referenced_ids(
-        graph["data/survey/responses.csv"]["variableMeasured"]
-    )
-    assert {"#participant", "#rating"} <= set(survey_variables)
+    # CSVW columns and Frictionless fields annotate stable file fragments.
+    assert referenced_ids(
+        graph["data/measurements.csv#column:time"]["variableMeasured"]
+    ) == ["#time"]
+    assert referenced_ids(
+        graph["data/measurements.csv#column:temperature"]["variableMeasured"]
+    ) == ["#temperature-2"]
+    assert referenced_ids(
+        graph["data/survey/responses.csv#column:participant"]["variableMeasured"]
+    ) == ["#participant"]
+    assert referenced_ids(
+        graph["data/survey/responses.csv#column:rating"]["variableMeasured"]
+    ) == ["#rating"]
+    assert "variableMeasured" not in graph["data/measurements.csv"]
+    assert "variableMeasured" not in graph["data/survey/responses.csv"]
 
     # Selection creates matching files and fragments, then links one variable.
     for run in ("run-01.vtk", "run-02.vtk"):
         assert f"data/results/{run}" in graph
         fragment = graph[f"data/results/{run}#point-data:velocity"]
-        assert referenced_ids(fragment["about"]) == ["#velocity"]
+        assert "@type" not in fragment
+        assert referenced_ids(fragment["isPartOf"]) == [f"data/results/{run}"]
+        assert referenced_ids(fragment["variableMeasured"]) == ["#velocity"]
+
+    # Fragment contexts are contextual entities, never root containment parts.
+    root_parts = referenced_ids(graph["./"]["hasPart"])
+    assert not any("#" in identifier for identifier in root_parts)
 
     # Workflow links point to existing entities rather than string paths.
     workflow = graph["#benchmark"]

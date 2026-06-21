@@ -44,7 +44,7 @@ def test_core_dsl_and_determinism(tmp_path):
                     link("variableMeasured", velocity)
                     file("data/a.vtk")
                     with select("data/*.vtk#point-data:velocity"):
-                        link("about", velocity)
+                        link("variableMeasured", velocity)
                 with workflow("benchmark"):
                     link("output", data)
 
@@ -58,7 +58,11 @@ def test_core_dsl_and_determinism(tmp_path):
     assert "data/" in ids(data["./"]["hasPart"])
     assert "data/a.vtk" in ids(data["data/"]["hasPart"])
     assert data["#velocity"]["unitText"] == "m/s"
-    assert ids(data["data/a.vtk#point-data:velocity"]["about"]) == ["#velocity"]
+    fragment = data["data/a.vtk#point-data:velocity"]
+    assert "@type" not in fragment
+    assert ids(fragment["isPartOf"]) == ["data/a.vtk"]
+    assert ids(fragment["variableMeasured"]) == ["#velocity"]
+    assert "data/a.vtk#point-data:velocity" not in ids(data["./"]["hasPart"])
 
 
 def test_merges_and_discovery(tmp_path):
@@ -126,9 +130,19 @@ def test_csvw_and_frictionless(tmp_path):
                 merge("survey/datapackage.json")
 
     data = graph(tmp_path)
-    assert ids(data["table.csv"]["variableMeasured"]) == ["#speed"]
-    assert ids(data["survey/responses.csv"]["variableMeasured"]) == ["#age"]
+    assert "variableMeasured" not in data["table.csv"]
+    csv_fragment = data["table.csv#column:speed"]
+    assert "@type" not in csv_fragment
+    assert ids(csv_fragment["variableMeasured"]) == ["#speed"]
+    assert ids(csv_fragment["isPartOf"]) == ["table.csv"]
+    assert "variableMeasured" not in data["survey/responses.csv"]
+    field_fragment = data["survey/responses.csv#column:age"]
+    assert "@type" not in field_fragment
+    assert ids(field_fragment["variableMeasured"]) == ["#age"]
+    assert ids(field_fragment["isPartOf"]) == ["survey/responses.csv"]
     assert "survey/responses.csv" in ids(data["survey/"]["hasPart"])
+    assert "table.csv#column:speed" not in ids(data["./"]["hasPart"])
+    assert "survey/responses.csv#column:age" not in ids(data["./"]["hasPart"])
 
 
 def test_citation_cff(tmp_path):
@@ -269,4 +283,49 @@ def test_discovery_consumes_csvw_descriptor(tmp_path):
 
     data = graph(tmp_path)
     assert "table-metadata.json" not in data
-    assert ids(data["table.csv"]["variableMeasured"]) == ["#speed"]
+    assert "variableMeasured" not in data["table.csv"]
+    assert ids(data["table.csv#column:speed"]["variableMeasured"]) == ["#speed"]
+
+
+def test_plain_file_selection_annotates_files(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    (results / "run1.vtk").write_text("one")
+    (results / "run2.vtk").write_text("two")
+
+    with crate(str(tmp_path)):
+        with dataset("."):
+            with select("results/*.vtk"):
+                link("author", person("Jane Roe"))
+
+    data = graph(tmp_path)
+    for name in ("run1.vtk", "run2.vtk"):
+        selected = data[f"results/{name}"]
+        assert selected["@type"] == "File"
+        assert ids(selected["author"]) == ["#jane-roe"]
+
+
+def test_fragment_selection_is_untyped_reused_and_not_containment(tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    (results / "run1.vtk").write_text("one")
+
+    with crate(str(tmp_path)):
+        with dataset("."):
+            velocity = variable("velocity", unit="m/s")
+            with select("results/*.vtk#point-data:velocity"):
+                link("variableMeasured", velocity)
+            with select("results/*.vtk#point-data:velocity"):
+                link("variableMeasured", velocity)
+
+    metadata = json.loads((tmp_path / "ro-crate-metadata.json").read_text())
+    data = {item["@id"]: item for item in metadata["@graph"]}
+    fragment_id = "results/run1.vtk#point-data:velocity"
+    fragment = data[fragment_id]
+    assert "@type" not in fragment
+    assert ids(fragment["isPartOf"]) == ["results/run1.vtk"]
+    assert ids(fragment["variableMeasured"]) == ["#velocity"]
+    assert data["#velocity"]["unitText"] == "m/s"
+    assert fragment_id not in ids(data["./"]["hasPart"])
+    assert fragment_id not in ids(data["results/run1.vtk"].get("hasPart", []))
+    assert sum(item["@id"] == fragment_id for item in metadata["@graph"]) == 1

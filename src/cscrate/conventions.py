@@ -205,8 +205,10 @@ def datapackage_handler(path, context):
                 str(field_name),
                 {key: value for key, value in properties.items() if value},
             )
-            builder.append_unique(file_node.entity, "variableMeasured", variable.entity)
-            builder.append_unique(target.entity, "variableMeasured", variable.entity)
+            fragment = builder.fragment(file_node, f"column:{field_name}")
+            builder.append_unique(
+                fragment.entity, "variableMeasured", variable.entity
+            )
     return True
 
 
@@ -257,8 +259,9 @@ def csvw_handler(path, context):
                 str(column.name),
                 properties,
             )
+            fragment = context.builder.fragment(target, f"column:{column.name}")
             context.builder.append_unique(
-                target.entity, "variableMeasured", variable.entity
+                fragment.entity, "variableMeasured", variable.entity
             )
         handled = True
     return handled

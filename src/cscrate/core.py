@@ -200,6 +200,20 @@ class Builder:
                     node.entity[prop] = value
         return node
 
+    def fragment(self, file_node, fragment):
+        """Get or create an untyped contextual fragment of a file entity."""
+
+        identifier = f"{file_node.entity.id}#{fragment}"
+        node = self.fragments.get(identifier)
+        if node is None:
+            entity = ContextEntity(self.crate, identifier)
+            entity._jsonld.pop("@type", None)
+            entity["isPartOf"] = file_node.entity
+            self.crate.add(entity)
+            node = Node(self, entity)
+            self.fragments[identifier] = node
+        return node
+
     @staticmethod
     def kind_type(kind):
         return {
@@ -209,7 +223,6 @@ class Builder:
             "person": "Person",
             "variable": "PropertyValue",
             "workflow": "ComputationalWorkflow",
-            "fragment": "CreativeWork",
         }[kind]
 
     @staticmethod
@@ -335,19 +348,7 @@ def select(pattern):
         if fragment is None:
             nodes.append(file_node)
             continue
-        fragment_id = f"{file_node.entity.id}#{fragment}"
-        fragment_node = builder.fragments.get(fragment_id)
-        if fragment_node is None:
-            entity = ContextEntity(
-                builder.crate,
-                fragment_id,
-                properties={"@type": Builder.kind_type("fragment")},
-            )
-            builder.crate.add(entity)
-            fragment_node = Node(builder, entity)
-            builder.fragments[fragment_id] = fragment_node
-            builder.append_unique(file_node.entity, "hasPart", entity)
-        nodes.append(fragment_node)
+        nodes.append(builder.fragment(file_node, fragment))
     return Selection(builder, nodes)
 
 

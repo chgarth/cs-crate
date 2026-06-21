@@ -1,0 +1,28 @@
+{
+  "name": "participant-survey",
+  "title": "Participant survey",
+  "description": "A tiny Frictionless Data example",
+  "resources": [
+    {
+      "name": "responses",
+      "path": "responses.csv",
+      "format": "csv",
+      "mediatype": "text/csv",
+      "schema": {
+        "fields": [
+          {
+            "name": "participant",
+            "type": "string",
+            "description": "Anonymous participant identifier"
+          },
+          {
+            "name": "rating",
+            "type": "integer",
+            "description": "Rating from one to five"
+          }
+        ]
+      }
+    }
+  ]
+}
+

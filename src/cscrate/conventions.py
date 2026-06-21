@@ -241,7 +241,13 @@ def csvw_handler(path, context):
                 continue
             properties = {}
             if column.titles:
-                properties["description"] = str(column.titles[0])
+                titles = column.titles
+                if isinstance(titles, dict):
+                    titles = next(iter(titles.values()), None)
+                if isinstance(titles, (list, tuple)):
+                    titles = titles[0] if titles else None
+                if titles:
+                    properties["description"] = str(titles)
             datatype = getattr(column, "datatype", None)
             if datatype is not None:
                 properties["valueType"] = str(getattr(datatype, "base", datatype))

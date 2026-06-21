@@ -1,0 +1,24 @@
+{
+  "@context": "http://www.w3.org/ns/csvw",
+  "url": "measurements.csv",
+  "tableSchema": {
+    "columns": [
+      {
+        "name": "time",
+        "titles": ["Elapsed time"],
+        "datatype": "number"
+      },
+      {
+        "name": "temperature",
+        "titles": ["Fluid temperature"],
+        "datatype": "number"
+      },
+      {
+        "name": "velocity",
+        "titles": ["Flow velocity"],
+        "datatype": "number"
+      }
+    ]
+  }
+}
+

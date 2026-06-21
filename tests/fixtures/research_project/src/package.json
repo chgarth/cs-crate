@@ -1,0 +1,7 @@
+{
+  "name": "flow-solver",
+  "version": "1.0.0",
+  "description": "The JavaScript-facing metadata for a mixed-language solver",
+  "license": "MIT"
+}
+

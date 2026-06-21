@@ -1,0 +1,6 @@
+[project]
+name = "flow-lab"
+version = "1.0.0"
+description = "A small educational fluid-flow research project"
+requires-python = ">=3.12"
+

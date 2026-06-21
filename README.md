@@ -171,9 +171,13 @@ with software("."):
 - ignores `.git`, `__pycache__`, `.venv`, `node_modules`, `build`, and `dist`
   by default;
 - creates `Dataset` entities for nonignored subdirectories;
-- creates `File` entities for nonignored files that are not consumed as
-  metadata;
 - runs convention handlers for every file it encounters.
+
+An ordinary file is not automatically added to the graph. It becomes a `File`
+entity only when something needs to refer to it—for example an explicit
+`file(...)` declaration, a `select(...)`, or a convention descriptor that
+resolves the file it describes. Other files remain covered by their enclosing
+dataset without making the crate graph proportional to every filesystem entry.
 
 An explicitly declared directory is a discovery scope boundary. Enclosing
 discovery can enrich that directory from its local convention files, but does
@@ -381,4 +385,3 @@ with crate("."):
 `rocrate-py`, not a comprehensive RO-Crate framework. Direct access to the
 underlying entities remains available when the built-in DSL or conventions do
 not cover a use case.
-

@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: Flow Lab
+message: Please cite this educational example.
+type: software
+authors:
+  - given-names: Grace
+    family-names: Hopper
+    orcid: https://orcid.org/0000-0000-0000-0001
+license: CC0-1.0
+

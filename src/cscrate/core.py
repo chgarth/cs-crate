@@ -127,6 +127,7 @@ class Builder:
         if ignore_file.exists():
             patterns.extend(ignore_file.read_text(encoding="utf-8").splitlines())
         self.ignore_spec = pathspec.GitIgnoreSpec.from_lines(patterns)
+        self.crate.root_dataset._jsonld.pop("datePublished", None)
         root_node = Node(self, self.crate.root_dataset, True, "./")
         self.paths["./"] = root_node
         self.crate_node = CrateNode(self, self.crate.root_dataset, True, "./")
@@ -358,6 +359,7 @@ def merge(source):
     for target in builder.current:
         if not try_merge(path, target):
             raise ValueError(f"unsupported metadata convention: {path.name}")
+        print(f"from {builder.normalize(path)}: merged metadata")
 
 
 def discover():
@@ -381,10 +383,20 @@ def _discover_dir(builder, target, directory, *, is_root):
 
     for entry in reversed(entries):
         entry_rel = builder.normalize(str(entry.relative_to(builder.root)))
-        if entry.is_dir() or builder.ignored(entry_rel, False):
+        if (
+            entry.is_dir()
+            or entry.name == "ro-crate-metadata.json"
+            or builder.ignored(entry_rel, False)
+        ):
             continue
-        if not try_merge(entry, local_target):
-            builder.resolve_path(entry, "file", local_target)
+        before = set(builder.paths)
+        if try_merge(entry, local_target):
+            for identifier in sorted(set(builder.paths) - before):
+                print(
+                    f"from {entry_rel}: created entity "
+                    f"{builder.paths[identifier].entity.id}"
+                )
+            print(f"from {entry_rel}: merged metadata")
 
     if scope_boundary:
         return

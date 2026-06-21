@@ -180,7 +180,7 @@ def test_hidden_paths_and_discovery_scope_boundary(tmp_path):
     assert ".metadata" in data
 
 
-def test_discovery_consumes_metadata_and_emits_data(tmp_path):
+def test_discovery_consumes_metadata_without_emitting_unreferenced_files(tmp_path):
     (tmp_path / "pyproject.toml").write_text('[project]\nname="demo"\n')
     (tmp_path / "payload.txt").write_text("data")
 
@@ -190,7 +190,21 @@ def test_discovery_consumes_metadata_and_emits_data(tmp_path):
 
     data = graph(tmp_path)
     assert "pyproject.toml" not in data
-    assert "payload.txt" in data
+    assert "payload.txt" not in data
+
+
+def test_debug_output_reports_merges_without_unreferenced_entities(tmp_path, capsys):
+    (tmp_path / "pyproject.toml").write_text('[project]\nname="demo"\n')
+    (tmp_path / "payload.txt").write_text("data")
+
+    with crate(str(tmp_path)):
+        with software("."):
+            merge("pyproject.toml")
+            discover()
+
+    output = capsys.readouterr().out.splitlines()
+    assert "from pyproject.toml: merged metadata" in output
+    assert not any("payload.txt" in line for line in output)
 
 
 def test_user_convention_overrides_builtins(tmp_path):
@@ -234,7 +248,7 @@ def test_paired_handlers_skip_missing_resources(tmp_path):
 
     data = graph(tmp_path)
     assert "missing.csv" not in data
-    assert "missing-metadata.json" in data
+    assert "missing-metadata.json" not in data
 
 
 def test_discovery_consumes_csvw_descriptor(tmp_path):

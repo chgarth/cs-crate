@@ -1,0 +1,22 @@
+
+cff-version: 1.2.0
+title: cscrate
+message: An RO-Crate generator for CS research
+type: software
+authors:
+  - orcid: 'https://orcid.org/0000-0003-1669-8549'
+    given-names: Christoph
+    family-names: Garth
+    email: garth@rptu.de
+abstract: >-
+  cscrate is a small Python package providing a lightweight
+  embedded DSL (EDSL)
+
+  for generating [RO-Crates](https://w3id.org/ro/crate) from
+  scientific software
+
+  repositories.
+keywords:
+  - RO-Crate
+  - Python
+license: CC-BY-4.0
